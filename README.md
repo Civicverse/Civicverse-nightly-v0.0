@@ -751,12 +751,11 @@ Community Notes / Human Accountability: Every action is verified to ensure ethic
 CivicVerse is fully civilian-owned, human-governed, and legally compliant.
 
 🐳 Dockerized Deployment
-git clone https://github.com/civicverse/Civicverse.git
+git clone https://github.com/civicverse/civicverse.git
 Install dependencies 
 cd civicverse
 chmod +x setup.sh
 ./setup.sh      # generates keys + .env
-# ← edit .env with real Kaspa/Monero addresses
 docker compose up -d --build
 
 
