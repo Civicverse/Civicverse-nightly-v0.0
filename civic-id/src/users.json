@@ -1,0 +1,16 @@
+[
+  {
+    "civicId": "d94f63d5fa7d5db09202ca963724fe4029d409e1730f51d5eeb2a66227232396",
+    "name": "PlayerOne",
+    "options": {
+      "hair": "blue",
+      "skin": "orc"
+    },
+    "level": 1,
+    "xp": 0,
+    "balance": 70,
+    "trust": 1,
+    "invites": [],
+    "unlocked": false
+  }
+]

@@ -1,23 +1,28 @@
-const { generateKeypair, deriveCivicId } = require("./identity");
-const { createAvatar } = require("./avatar");
-const { vouch } = require("./trust");
-const { readUsers } = require("./storage");
+import { readUsers, writeUsers } from "./storage";
+import { getBalance, addFunds, spendFunds } from "./wallet";
+import { vouch } from "./trust";
+import { createAvatar } from "./avatar";
+import crypto from "crypto";
 
-// Step 1: Generate Civic ID
-const { publicKey } = generateKeypair();
-const civicId = deriveCivicId(publicKey);
+// Create a new Civic ID and avatar
+const civicId = crypto.randomBytes(32).toString("hex");
+const avatar = createAvatar(civicId, "PlayerOne");
+
+const users = readUsers();
+users.push(avatar);
+writeUsers(users);
+
 console.log("Civic ID:", civicId);
-
-// Step 2: Create avatar
-const avatar = createAvatar(civicId, "PlayerOne", { hair: "blue", skin: "orc" });
 console.log("Created avatar:", avatar);
 
-// Step 3: Promote to canonical
-vouch(civicId);
-vouch(civicId);
-vouch(civicId);
+// Wallet operations
+console.log("Initial balance:", getBalance(civicId));
+addFunds(civicId, 100);
+console.log("Balance after adding 100:", getBalance(civicId));
+spendFunds(civicId, 30);
+console.log("Balance after spending 30:", getBalance(civicId));
 
-// Step 4: Read users and show canonical state
-const users = readUsers();
-console.log("Canonical avatar state:", users[civicId]);
+// Trust operations
+vouch(civicId);
+console.log("Avatar after vouching:", readUsers().find(u => u.civicId === civicId));
 

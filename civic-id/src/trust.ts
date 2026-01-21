@@ -1,18 +1,9 @@
-const { readUsers, writeUsers } = require("./storage");
+import { readUsers, writeUsers } from "./storage";
 
-function vouch(civicId) {
+export function vouch(civicId: string): void {
   const users = readUsers();
-  if (!users[civicId]) throw new Error("User not found");
-
-  users[civicId].trust.vouches += 1;
-  if (users[civicId].trust.vouches >= 3) {
-    users[civicId].avatar.status = "canonical";
-    users[civicId].trust.canonical = true;
-  }
-
+  const user = users.find(u => u.civicId === civicId);
+  if (user) user.trust += 1;
   writeUsers(users);
-  return users[civicId];
 }
-
-module.exports = { vouch };
 

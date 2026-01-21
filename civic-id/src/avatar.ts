@@ -1,15 +1,29 @@
-import { readUsers, writeUsers } from "./storage";
-
-export function createAvatar(civicId: string, name: string, appearance: any) {
-  const users = readUsers();
-  if (users[civicId]) throw new Error("Avatar already exists");
-
-  users[civicId] = {
-    civicId,
-    avatar: { name, appearance, status: "provisional", level: 1, karma: 0 },
-    trust: { vouches: 0, canonical: false }
+export interface Avatar {
+  civicId: string;
+  name: string;
+  options: {
+    hair: string;
+    skin: string;
   };
-
-  writeUsers(users);
-  return users[civicId];
+  level: number;
+  xp: number;
+  balance: number;
+  trust: number;
+  invites: string[];
+  unlocked: boolean;
 }
+
+export function createAvatar(civicId: string, name: string): Avatar {
+  return {
+    civicId,
+    name,
+    options: { hair: "blue", skin: "orc" },
+    level: 1,
+    xp: 0,
+    balance: 0,
+    trust: 0,
+    invites: [],
+    unlocked: false
+  };
+}
+

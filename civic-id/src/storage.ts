@@ -1,11 +1,15 @@
 import fs from "fs";
-const USER_FILE = "./user-data/users.json";
+import path from "path";
 
-export function readUsers() {
-  if (!fs.existsSync(USER_FILE)) return {};
-  return JSON.parse(fs.readFileSync(USER_FILE, "utf-8"));
+const USERS_FILE = path.join(__dirname, "users.json");
+
+export function readUsers(): any[] {
+  if (!fs.existsSync(USERS_FILE)) return [];
+  const data = fs.readFileSync(USERS_FILE, "utf8");
+  return JSON.parse(data);
 }
 
-export function writeUsers(users: any) {
-  fs.writeFileSync(USER_FILE, JSON.stringify(users, null, 2));
+export function writeUsers(users: any[]): void {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 }
+
