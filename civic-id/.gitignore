@@ -22,3 +22,4 @@ build/
 src/users.json
 user-data/
 
+node_modules/
