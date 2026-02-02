@@ -1,54 +1,16 @@
 name: ClawdBot Master Builder
 
 on:
-  schedule:
-    - cron: "0 2 * * *"  # nightly at 2AM UTC
-  workflow_dispatch:      # allows manual trigger
+  workflow_dispatch:
 
 jobs:
-  full_build:
+  sanity-check:
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Checkout the repo
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      # Step 2: Set up Python
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-
-      # Step 3: Install dependencies
-      - name: Install dependencies
+      - name: Sanity output
         run: |
-          python -m pip install --upgrade pip
-          pip install pyyaml jsonschema requests
-
-      # Step 4: Run master ClawdBot
-      - name: Run ClawdBot full-scale
-        run: |
-          python clawd_bot_runner.py
-
-      # Step 5: Commit & push all changes to dedicated branch
-      - name: Commit changes
-        run: |
-          git config --global user.name "ClawdBot"
-          git config --global user.email "clawdbot@civicverse.org"
-          git checkout -b clawdbot-auto || git checkout clawdbot-auto
-          git add .
-          git diff-index --quiet HEAD || git commit -m "ClawdBot: full-scale autonomous improvements"
-          git push origin clawdbot-auto --force
-
-      # Step 6: Create or update pull request automatically
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "ClawdBot: full-scale autonomous improvements"
-          branch: clawdbot-auto
-          title: "ClawdBot Full-Scale Update"
-          body: "Automated full-scale improvements applied by ClawdBot. Audit files included."
-          reviewers: ""
-          assignees: ""
+          echo "ClawdBot is running"
+          ls -la
