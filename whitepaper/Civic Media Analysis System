@@ -1,0 +1,155 @@
+Civic Media Analysis System — White Paper
+
+Project Overview
+
+The Civic Media Analysis System is a real-time platform designed to detect coordinated psychological operations and influence campaigns across text, images, audio, and video.
+
+Its purpose is not to declare truth, assign blame, or censor content. Instead, it identifies statistical anomalies and patterns that suggest coordinated manipulation, narrative engineering, emotional amplification, and unusual propagation.
+
+The system is probabilistic by design. Outputs include confidence scores, competing explanations, and uncertainty indicators. Human judgment remains central at all stages.
+
+The ultimate goal is to provide situational awareness, promote transparency, and strengthen civic resilience in modern information environments.
+
+⸻
+
+Problem Statement
+
+Modern information systems amplify emotional content and reward speed over accuracy. Coordinated influence campaigns exploit these dynamics to manipulate opinions and behavior at scale.
+
+Most people notice manipulation instinctively but lack tools to understand it systematically. Existing solutions either oversimplify, inflame distrust, or replace nuance with judgment.
+
+This project fills the gap between raw media consumption and informed interpretation without escalating conflict.
+
+⸻
+
+System Goals
+	1.	Detect patterns of coordination and amplification across media channels.
+	2.	Identify narratives being engineered and reused across platforms.
+	3.	Quantify emotional manipulation and timing anomalies.
+	4.	Provide probabilistic assessments, not definitive claims.
+	5.	Ensure human analysts remain in control of interpretation.
+	6.	Make methodology transparent and auditable.
+
+⸻
+
+System Limitations
+
+The system explicitly does not:
+	•	Assign moral, legal, or personal guilt
+	•	Identify individuals by default
+	•	Censor or suppress content
+	•	Claim absolute truth
+	•	Replace human decision making
+
+These boundaries protect both users and the integrity of the platform.
+
+⸻
+
+Technical Architecture
+
+Data Ingestion Layer
+	•	Kafka or Redpanda for real-time streaming
+	•	API and webhook collectors for social media, news, RSS feeds
+	•	FFmpeg for video/audio preprocessing
+	•	Whisper or equivalent for speech-to-text transcription
+
+Analysis Layer
+
+Text Analysis
+	•	Transformer embeddings for semantic similarity
+	•	Narrative reuse and mutation detection
+	•	Emotion and affect modeling
+	•	Topic evolution tracking
+
+Network and Diffusion Analysis
+	•	Graph-based modeling (Neo4j or lightweight alternative)
+	•	Coordination timing analysis
+	•	Amplification velocity detection
+	•	Community clustering without identifying individuals
+
+Probabilistic Modeling
+	•	Bayesian inference for hypothesis testing
+	•	Evidence weighting from independent signals
+	•	Confidence scoring and uncertainty visualization
+	•	Competing explanation frameworks
+
+Multimodal Expansion (Phase 2+)
+	•	Vision-language models for image and meme detection
+	•	Audio prosody and emotional cadence analysis
+	•	Cross-modal narrative fingerprinting
+
+Data Storage
+	•	PostgreSQL for metadata and annotations
+	•	Vector database for embeddings and similarity searches
+	•	Immutable logs for auditing
+
+Backend & Infrastructure
+	•	Python for modeling, analysis, orchestration
+	•	Rust or Go for high-throughput pipelines (optional)
+	•	Docker for containerization
+	•	Kubernetes for scalable deployment (optional)
+
+Frontend / Analyst Interface
+	•	Timeline-based narrative visualization
+	•	Confidence and uncertainty indicators
+	•	Transparent explanation panels for flagged patterns
+	•	Human annotation and override support
+
+⸻
+
+Governance and Safety
+	•	No default actor attribution
+	•	No individual profiling
+	•	Public documentation of methods and limitations
+	•	Built-in monitoring to prevent misuse
+	•	Clear explanation of uncertainty and scope
+
+⸻
+
+Solo Developer Roadmap
+
+Phase 0 — Foundations (Weeks 0–4)
+	•	Define threat model and scope
+	•	Write taxonomy of influence techniques
+	•	Draft methodology and limitations document
+	•	Choose MVP tech stack
+
+Phase 1 — Text MVP (Weeks 5–16)
+	•	Implement text ingestion pipeline
+	•	Build transformer-based embeddings for narrative similarity
+	•	Detect temporal and coordination anomalies
+	•	Output probabilistic confidence scores
+	•	Simple analyst UI (timeline view, flagged patterns)
+
+Phase 2 — Probabilistic Attribution & Network Analysis (Weeks 17–28)
+	•	Add graph-based diffusion analysis
+	•	Implement Bayesian inference for hypotheses
+	•	Introduce competing explanation reporting
+	•	Improve uncertainty visualization
+
+Phase 3 — Multimodal Expansion (Weeks 29–40)
+	•	Add image and meme analysis using vision-language models
+	•	Add audio transcription and prosody detection
+	•	Cross-modal narrative tracking
+
+Phase 4 — Polishing, Governance, and Documentation (Weeks 41–52)
+	•	Add logging, auditability, and security
+	•	Expand analyst interface and visualization
+	•	Public methodology documentation
+	•	Test system with small datasets and refine outputs
+
+⸻
+
+Expected Timeline for Solo Developer
+	•	MVP (text only): 3–4 months
+	•	Probabilistic network analysis: 6–8 months
+	•	Multimodal system: 12–18 months
+	•	Full production-ready system with transparency and audit: 18–24 months
+
+⸻
+
+Conclusion
+
+This project is a practical, honest, and civic-minded tool to make information manipulation visible.
+
+It is not a weapon, truth engine, or platform for outrage. It is a system for situational awareness, transparency, and resilience that respects human judgment and promotes civic integrity in the information space.
