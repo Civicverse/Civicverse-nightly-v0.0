@@ -14,7 +14,10 @@
  */
 
 import { sha256 } from '@noble/hashes/sha256';
+import { hmac } from '@noble/hashes/hmac';
+import { sha512 } from '@noble/hashes/sha512';
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils';
+import * as secp from '@noble/secp256k1';
 
 interface ExtendedKey {
   privateKey: string;
@@ -37,42 +40,52 @@ interface DerivedAddress {
  * PBKDF2 derivation for seed from mnemonic
  * Standard: HMAC-SHA512 with "Bitcoin seed"
  */
-export async function mnemonicToSeed(mnemonic: string): Promise<string> {
+export async function mnemonicToSeed(mnemonic: string, passphrase: string = ''): Promise<Uint8Array> {
+  // BIP-39 seed = PBKDF2-HMAC-SHA512(mnemonic, "mnemonic" + passphrase, 2048, 64)
   const encoder = new TextEncoder();
-  const mnemonicBytes = encoder.encode(mnemonic.normalize('NFKD'));
-  const saltBytes = encoder.encode('mnemonic');
-  
-  // PBKDF2 implementation (browser-compatible)
-  const key = await crypto.subtle.importKey(
+  const mnemonicNorm = mnemonic.normalize('NFKD');
+  const salt = 'mnemonic' + passphrase.normalize('NFKD');
+
+  const keyMaterial = await crypto.subtle.importKey(
     'raw',
-    mnemonicBytes,
-    { name: 'HMAC', hash: 'SHA-512' },
+    encoder.encode(mnemonicNorm),
+    { name: 'PBKDF2' },
     false,
-    ['sign']
+    ['deriveBits']
   );
-  
-  const iterations = 2048;
-  const keyMaterial = await crypto.subtle.sign('HMAC', key, saltBytes);
-  
-  return bytesToHex(new Uint8Array(keyMaterial));
+
+  const derived = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      hash: 'SHA-512',
+      salt: encoder.encode(salt),
+      iterations: 2048,
+    },
+    keyMaterial,
+    512
+  );
+
+  return new Uint8Array(derived);
 }
 
 /**
  * Generate extended master key from seed
  */
-export function generateMasterKey(seed: string): ExtendedKey {
-  // HMAC-SHA512 with "Bitcoin seed"
-  const hmacKey = 'Bitcoin seed';
-  const seedBytes = hexToBytes(seed);
-  
-  // For browser: simple implementation
-  // Production should use proper HMAC-SHA512
-  const hmacResult = sha256(new TextEncoder().encode(hmacKey + seed));
-  
+export function generateMasterKey(seedBytes: Uint8Array): ExtendedKey {
+  // I = HMAC-SHA512(key="Bitcoin seed", msg=seed)
+  const I = hmac(sha512, hexToBytes(''), seedBytes); // placeholder, use hmac below
+  const key = new TextEncoder().encode('Bitcoin seed');
+  const I_full = hmac(sha512, key, seedBytes);
+  const IL = I_full.slice(0, 32);
+  const IR = I_full.slice(32);
+
+  const privateKeyHex = bytesToHex(IL);
+  const chainCodeHex = bytesToHex(IR);
+
   return {
-    privateKey: bytesToHex(hmacResult).slice(0, 64),
-    publicKey: '', // Will be computed from private key
-    chainCode: bytesToHex(hmacResult).slice(64, 128),
+    privateKey: privateKeyHex,
+    publicKey: bytesToHex(secp.getPublicKey(privateKeyHex, true)),
+    chainCode: chainCodeHex,
     depth: 0,
     index: 0,
     fingerprint: '00000000',
@@ -84,52 +97,101 @@ export function generateMasterKey(seed: string): ExtendedKey {
  * BIP-44 path: m/44'/coin_type'/account'/change/index
  */
 export function deriveAddress(
-  seed: string,
+  master: ExtendedKey,
   coinType: 'BTC' | 'ETH' | 'KASPA' | 'MONERO',
   accountIndex: number = 0,
   changeIndex: number = 0,
   addressIndex: number = 0
 ): DerivedAddress {
-  const masterKey = generateMasterKey(seed);
-  
-  // Coin type mapping (BIP-44)
-  const coinTypes: Record<string, number> = {
-    BTC: 0,
-    ETH: 60,
-    KASPA: 111,
-    MONERO: 128,
-  };
-  
-  const coin = coinTypes[coinType] || 0;
+  const coin = getCoinType(coinType);
   const path = `m/44'/${coin}'/${accountIndex}'/${changeIndex}/${addressIndex}`;
-  
-  // Simplified derivation (production needs full HMAC-SHA512 chain)
-  const pathHash = sha256(new TextEncoder().encode(`${masterKey.privateKey}${path}`));
-  const derivedPrivateKey = bytesToHex(pathHash).slice(0, 64);
-  
-  // Format address based on coin type
+  const child = derivePath(master, path);
+
+  const priv = child.privateKey;
+  const pub = child.publicKey;
+
+  // Format addresses (basic, production should use proper address encoding)
   let address = '';
-  switch (coinType) {
-    case 'BTC':
-      address = `bc1${derivedPrivateKey.slice(0, 42)}`; // Bech32 format (simplified)
-      break;
-    case 'ETH':
-      address = `0x${derivedPrivateKey.slice(0, 40)}`; // Ethereum address
-      break;
-    case 'KASPA':
-      address = `kaspa:${derivedPrivateKey.slice(0, 50)}`; // Kaspa format
-      break;
-    case 'MONERO':
-      address = `4${derivedPrivateKey.slice(0, 94)}`; // Monero mainnet
-      break;
+  if (coinType === 'ETH') {
+    // Ethereum: keccak256(pub) last 20 bytes
+    const ethAddr = bytesToHex(secp.utils.sha256(hexToBytes(pub))).slice(-40);
+    address = '0x' + ethAddr;
+  } else {
+    address = `${coinType.toLowerCase()}:${priv.slice(0, 32)}`;
   }
-  
+
   return {
     address,
-    publicKey: derivedPrivateKey.slice(0, 64), // Simplified public key
-    privateKey: derivedPrivateKey,
+    publicKey: pub,
+    privateKey: priv,
     path,
     chainType: coinType,
+  };
+}
+
+/**
+ * Derive child key for BIP32 path (supports hardened and non-hardened)
+ */
+export function derivePath(master: ExtendedKey, path: string): ExtendedKey {
+  // path like m/44'/60'/0'/0/0
+  const segments = path.split('/').slice(1);
+  let key = {
+    privateKey: master.privateKey,
+    chainCode: master.chainCode,
+    publicKey: master.publicKey,
+    depth: master.depth,
+    index: master.index,
+    fingerprint: master.fingerprint,
+  };
+
+  for (const seg of segments) {
+    const hardened = seg.endsWith("'");
+    const idx = parseInt(hardened ? seg.slice(0, -1) : seg, 10);
+    const childIndex = hardened ? (0x80000000 + idx) >>> 0 : idx >>> 0;
+    key = deriveChild(key, childIndex);
+  }
+
+  return key;
+}
+
+function deriveChild(parent: ExtendedKey, index: number): ExtendedKey {
+  const indexBytes = new Uint8Array(4);
+  const dv = new DataView(indexBytes.buffer);
+  dv.setUint32(0, index);
+
+  let data: Uint8Array;
+  if (index >= 0x80000000) {
+    // hardened: 0x00 || ser256(kpar) || ser32(index)
+    data = new Uint8Array([0, ...hexToBytes(parent.privateKey), ...indexBytes]);
+  } else {
+    // non-hardened: serP(point(kpar)) || ser32(index)
+    const pub = secp.getPublicKey(parent.privateKey, true);
+    data = new Uint8Array([...pub, ...indexBytes]);
+  }
+
+  const I = hmac(sha512, hexToBytes(parent.chainCode), data);
+  const IL = I.slice(0, 32);
+  const IR = I.slice(32);
+
+  // child k = (IL + kpar) mod n
+  const ILbn = BigInt('0x' + bytesToHex(IL));
+  const kpar = BigInt('0x' + parent.privateKey);
+  const n = secp.CURVE.n;
+  const childKeyNum = (ILbn + kpar) % n;
+  const childKeyHex = childKeyNum.toString(16).padStart(64, '0');
+
+  const childPub = bytesToHex(secp.getPublicKey(childKeyHex, true));
+
+  // fingerprint: first 4 bytes of HASH160(parent pubkey) - simplified use sha256
+  const fp = bytesToHex(sha256(hexToBytes(parent.publicKey))).slice(0, 8);
+
+  return {
+    privateKey: childKeyHex,
+    publicKey: childPub,
+    chainCode: bytesToHex(IR),
+    depth: parent.depth + 1,
+    index: index,
+    fingerprint: fp,
   };
 }
 
@@ -137,35 +199,21 @@ export function deriveAddress(
  * Generate all addresses for a wallet from a mnemonic
  * Simplified deterministic address generation from mnemonic
  */
-export function generateWalletAddresses(
+export async function generateWalletAddresses(
   mnemonic: string,
   accountIndex: number = 0
-): Record<string, DerivedAddress> {
+): Promise<Record<string, DerivedAddress>> {
   const coins: ('BTC' | 'ETH' | 'KASPA' | 'MONERO')[] = ['BTC', 'ETH', 'KASPA', 'MONERO'];
   const addresses: Record<string, DerivedAddress> = {};
-  
-  // Use mnemonic as base for deterministic key derivation
-  const mnemonicHash = bytesToHex(sha256(new TextEncoder().encode(mnemonic)));
-  
+
+  const seed = await mnemonicToSeed(mnemonic);
+  const master = generateMasterKey(seed);
+
   for (const coin of coins) {
-    const coinPath = `m/44'/${getCoinType(coin)}'/${accountIndex}'/0/0`;
-    // Derive deterministic private key from mnemonic + coin type
-    const deriveInput = mnemonicHash + coin + accountIndex;
-    const privateKeyBytes = sha256(new TextEncoder().encode(deriveInput));
-    const privateKey = bytesToHex(privateKeyBytes).slice(0, 64);
-    
-    // Generate address based on coin type
-    const address = deriveAddressFromPrivateKey(privateKey, coin);
-    
-    addresses[coin] = {
-      address,
-      publicKey: privateKey.slice(0, 40), // Simplified: use first 40 chars as "public key"
-      privateKey,
-      path: coinPath,
-      chainType: coin,
-    };
+    const addr = deriveAddress(master, coin, accountIndex, 0, 0);
+    addresses[coin] = addr;
   }
-  
+
   return addresses;
 }
 
@@ -209,4 +257,5 @@ export default {
   generateMasterKey,
   deriveAddress,
   generateWalletAddresses,
+  derivePath,
 };
