@@ -28,73 +28,123 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-dark flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-tropical flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated background gradient orbs */}
+      <div className="absolute top-20 right-20 w-96 h-96 bg-gradient-to-br from-neon-cyan/20 to-transparent rounded-full blur-3xl opacity-30 animate-pulse-neon"></div>
+      <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-neon-pink/20 to-transparent rounded-full blur-3xl opacity-30 animate-pulse-neon"></div>
+
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-        className="w-full max-w-md"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className="w-full max-w-md relative z-10"
       >
-        <div className="bg-dark-800 border border-dark-700 rounded-2xl p-8 shadow-2xl">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-civic mb-4">
-              <span className="text-2xl font-bold">⚔️</span>
-            </div>
-            <h1 className="text-3xl font-bold text-white mb-2">CivicVerse</h1>
-            <p className="text-dark-300">Non-Custodial Login</p>
-          </div>
+        <div className="bg-tropical-dark/80 backdrop-blur-xl border border-neon-cyan/30 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+          {/* Top accent line */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-neon-cyan-pink"></div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-center mb-8"
+          >
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-neon-cyan-pink mb-4 shadow-lg"
+            >
+              <span className="text-3xl font-bold">🌴</span>
+            </motion.div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-neon-cyan via-neon-pink to-neon-cyan bg-clip-text text-transparent mb-2 animate-pulse-neon">
+              CivicVerse
+            </h1>
+            <p className="text-neon-cyan/80 font-medium">Enter the Tropical Neon City</p>
+          </motion.div>
 
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg flex items-start gap-3"
+              className="mb-6 p-4 bg-red-500/15 border border-red-500/60 rounded-lg flex items-start gap-3 backdrop-blur-sm"
             >
-              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-red-300 flex-shrink-0 mt-0.5" />
               <p className="text-red-200 text-sm">{error}</p>
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-dark-200 mb-2">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 w-5 h-5 text-dark-500" />
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <label className="block text-sm font-bold text-neon-cyan/90 mb-3 uppercase tracking-wider">Password</label>
+              <div className="relative group">
+                <Lock className="absolute left-3 top-3.5 w-5 h-5 text-neon-pink group-focus-within:text-neon-cyan transition" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="w-full pl-10 pr-4 py-2.5 bg-dark-700 border border-dark-600 rounded-lg focus:border-civic-500 focus:outline-none focus:ring-2 focus:ring-civic-500/20 transition text-white placeholder-dark-400"
+                  placeholder="••••••••"
+                  className="w-full pl-10 pr-4 py-3 bg-tropical-surface/60 border border-neon-cyan/30 rounded-lg focus:border-neon-pink focus:outline-none focus:ring-2 focus:ring-neon-pink/30 transition text-white placeholder-tropical-accent/60 backdrop-blur-sm"
                   autoFocus
                 />
               </div>
-            </div>
+            </motion.div>
 
-            <button
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 bg-gradient-civic rounded-lg font-semibold text-white hover:opacity-90 transition disabled:opacity-50"
+              className="w-full py-3 bg-gradient-neon-cyan-pink rounded-lg font-bold text-white/95 hover:shadow-lg hover:shadow-neon-pink/50 transition disabled:opacity-50 disabled:cursor-not-allowed text-base tracking-wide"
             >
-              {loading ? 'Logging in...' : 'Login'}
-            </button>
+              {loading ? (
+                <motion.div className="flex items-center justify-center gap-2">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                    className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+                  />
+                  Unlocking...
+                </motion.div>
+              ) : (
+                'Enter the City'
+              )}
+            </motion.button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-dark-300 text-sm">
-              No account yet?{' '}
-              <a href="/signup" className="text-civic-400 hover:text-civic-300 font-medium">
-                Create one
-              </a>
+          <div className="mt-8 text-center">
+            <p className="text-tropical-accent/80 text-sm">
+              New to the verse?{' '}
+              <motion.a
+                href="/signup"
+                whileHover={{ scale: 1.05 }}
+                className="text-neon-cyan hover:text-neon-pink font-bold transition cursor-pointer"
+              >
+                Create Your Identity
+              </motion.a>
             </p>
           </div>
 
-          <div className="mt-6 p-4 bg-dark-700/50 rounded-lg border border-dark-600">
-            <p className="text-xs text-dark-300">
-              🔒 <strong>Non-Custodial:</strong> Your identity and wallet are encrypted on this device. We never see your password or private keys.
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="mt-6 p-4 bg-neon-cyan/10 rounded-lg border border-neon-cyan/30 backdrop-blur-sm"
+          >
+            <p className="text-xs text-neon-cyan/80 leading-relaxed">
+              🔒 <strong>Non-Custodial Encrypted:</strong> Your identity and wallet are encrypted on your device only. We NEVER see your password or private keys.
             </p>
-          </div>
+          </motion.div>
         </div>
+
+        {/* Floating particles */}
+        <motion.div className="absolute -bottom-10 -right-10 w-20 h-20 bg-neon-pink/20 rounded-full blur-2xl opacity-50" animate={{ y: [0, -20, 0] }} transition={{ duration: 4, repeat: Infinity }} />
       </motion.div>
     </div>
   );
