@@ -20,6 +20,22 @@ let communityWallet = 0;
 const matches = new Map(); // matchId -> { id, owner, participants: Set, bets: Map(playerId->amount), status }
 let matchIdCounter = 0;
 
+// ToS consents storage (playerId -> { version, acceptedAt })
+const tosConsents = new Map();
+const fs = require('fs');
+const TOS_FILE = __dirname + '/tos_consents.json';
+
+// load existing consents if present
+try {
+  if (fs.existsSync(TOS_FILE)) {
+    const raw = fs.readFileSync(TOS_FILE, 'utf8');
+    const parsed = JSON.parse(raw || '{}');
+    Object.entries(parsed).forEach(([k, v]) => tosConsents.set(Number(k), v));
+  }
+} catch (err) {
+  console.error('Failed to load TOS consents:', err);
+}
+
 // Combat constants
 const DAMAGE_PER_HIT = 25;
 const ATTACK_RANGE = 3;
@@ -326,6 +342,29 @@ app.get('/api/wallet/:playerId', (req, res) => {
 
 app.get('/api/community_wallet', (req, res) => {
   res.json({ community: communityWallet });
+});
+
+// ToS endpoints
+app.post('/api/tos/accept', (req, res) => {
+  const { playerId, version } = req.body;
+  if (!playerId || !version) return res.status(400).json({ error: 'playerId and version required' });
+  const rec = { version, acceptedAt: Date.now() };
+  tosConsents.set(Number(playerId), rec);
+  // persist to file
+  try {
+    const obj = {};
+    tosConsents.forEach((v, k) => { obj[k] = v; });
+    fs.writeFileSync(TOS_FILE, JSON.stringify(obj, null, 2));
+  } catch (err) {
+    console.error('Failed to persist TOS consent:', err);
+  }
+  res.json({ ok: true, record: rec });
+});
+
+app.get('/api/tos/:playerId', (req, res) => {
+  const pid = Number(req.params.playerId);
+  if (!tosConsents.has(pid)) return res.status(404).json({ error: 'consent not found' });
+  res.json(tosConsents.get(pid));
 });
 
 function serializeMatch(match) {

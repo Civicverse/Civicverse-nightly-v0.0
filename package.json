@@ -2,6 +2,11 @@
   "name": "civicverse-game",
   "version": "2.0.0",
   "type": "module",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
