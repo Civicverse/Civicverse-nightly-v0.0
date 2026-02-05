@@ -18,6 +18,88 @@ A runtime ethical-AI enforcement layer
 
 A decentralized identity and voting protocol
 
+---
+
+Nightly v0.0 — Local Developer Setup & Roadmap
+------------------------------------------------
+
+This section documents the Nightly v0.0 developer quickstart, how the non-custodial onboarding works, and the next roadmap steps.
+
+Prerequisites
+-------------
+- Docker & Docker Compose
+- Node.js 18+ and npm
+- Git
+
+Quickstart (Docker)
+--------------------
+From the repo root:
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+Open the frontend at http://localhost:3000
+
+Local development (frontend)
+----------------------------
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Non-custodial onboarding — how it works
+--------------------------------------
+- Identity: Ed25519 keypair generated in the browser and stored encrypted in localStorage.
+- Wallet: BIP-39 12-word mnemonic generated in the browser and encrypted with a password-derived AES-256-GCM key.
+- Password: PBKDF2-SHA256 (100k iterations) used for deriving encryption keys.
+- Persistence: Encrypted blobs remain in localStorage; login requires password to decrypt.
+
+Debugging & validation
+----------------------
+- localStorage keys of interest: `civicverse:identity`, `civicverse:wallet`, `civicverse:multichain`, `civicverse_user`.
+- To debug, open DevTools → Console and look for logs prefixed with `[signup]`, `[auth]`, or `[wallet]`.
+
+Roadmap (short-term priorities)
+------------------------------
+1. Phase 3 — Recovery (Shamir's Secret Sharing + Social Recovery) — med
+2. Full BIP-32/HMAC-SHA512 implementation for interoperability — med
+3. Harden local storage (IndexedDB/SQLite + encryption) — small
+4. CI (unit + e2e tests) and GitHub Actions — med
+5. Monorepo consolidation & release scripts — large
+
+Contributing
+------------
+- Fork the repo, create a branch, add tests, open a PR with description and changelog.
+
+Cleaning & pushing a nightly
+----------------------------
+Before pushing a nightly build, remove local artifacts:
+
+```powershell
+Remove-Item -Recurse -Force .\frontend\node_modules
+Remove-Item -Recurse -Force .\backend\node_modules
+Remove-Item -Recurse -Force .\frontend\dist
+Remove-Item -Recurse -Force .\**\.cache
+```
+
+Commit and push to the remote (example):
+
+```bash
+git add .
+git commit -m "chore: add Nightly README + roadmap"
+git remote add nightly https://github.com/Civicverse/Civicverse-nightly-v0.0.git
+git push nightly HEAD:main --force
+```
+
+Notes
+-----
+- The current wallet/address derivation is simplified for demo purposes — do not use generated keys on mainnet until replaced with a production BIP-32 implementation.
+- For production, move to secure storage and conduct a security audit.
+
+
 A purposeful economic engine (UBI via verified participation)
 
 A resilient digital commons designed to operate online, offline, and across jurisdictions
