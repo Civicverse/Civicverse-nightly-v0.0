@@ -2,20 +2,16 @@ version: "3.9"
 
 services:
   monerod:
-    image: sethsimmons/simple-monero-wallet-rpc:latest
-    command: --daemon-host host.docker.internal --rpc-bind-port 18081 --wallet-rpc-bind-port 18083 --non-interactive
+    build: ./monerod-stub
     ports:
       - "18081:18081"
       - "18083:18083"
     restart: unless-stopped
 
   kaspa-node:
-    image: kaspanet/kaspad:v0.15.2
-    command: --utxoindex --rpcmaxclients 500
+    build: ./kaspa-stub
     ports:
       - "16110:16110"
-    volumes:
-      - kaspa-data:/root/.kaspad
     restart: unless-stopped
 
   civicverse-backend:
@@ -27,11 +23,25 @@ services:
       - "3001:3001"
     restart: unless-stopped
 
+  multiplayer-server:
+    build: ./backend
+    working_dir: /app
+    command: node multiplayer-server.js
+    ports:
+      - "8080:8080"
+    environment:
+      - MULTIPLAYER_PORT=8080
+    restart: unless-stopped
+
   civicverse-frontend:
     build: ./frontend
     env_file: .env
     ports:
       - "3000:80"
+    depends_on:
+      - multiplayer-server
+    environment:
+      - VITE_WS_URL=ws://localhost:8080/ws
     restart: unless-stopped
 
   craig-watcher:
@@ -41,18 +51,45 @@ services:
       - civicverse-backend
     restart: unless-stopped
 
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: civicverse
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  ledger:
+    build: ./services/ledger
+    environment:
+      - POSTGRES_URL=postgres://postgres:postgres@postgres:5432/civicverse
+    ports:
+      - "4000:4000"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  wallet-router:
+    build: ./services/wallet-router
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+
+  gateway:
+    build: ./services/gateway
+    environment:
+      - LEDGER_URL=http://ledger:4000
+      - WALLET_URL=http://wallet-router:5000
+    ports:
+      - "4001:4001"
+    depends_on:
+      - ledger
+      - wallet-router
+    restart: unless-stopped
+
 
 volumes:
   kaspa-data:
-  caddy_data:
-  caddy_config:
+  postgres-data:
