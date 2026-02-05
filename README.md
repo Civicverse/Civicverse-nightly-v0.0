@@ -1,7 +1,7 @@
 🌐 CivicVerse
 
 A Civilian-First Protocol for Ethical AI, Privacy, Digital Governance, and Resilient Public Infrastructure
-Status: Active Development | Updated: December 2025
+Status: Active Development | Updated: February 2026
 
 CivicVerse is a standards-aware civic infrastructure layer that uses immersive game systems to coordinate governance, education, commerce, and verified public participation in real time.
 
@@ -20,84 +20,556 @@ A decentralized identity and voting protocol
 
 ---
 
-Nightly v0.0 — Local Developer Setup & Roadmap
-------------------------------------------------
+🚀 Nightly v0.0 — Complete Developer Setup Guide
+================================================
 
-This section documents the Nightly v0.0 developer quickstart, how the non-custodial onboarding works, and the next roadmap steps.
+### Prerequisites
 
-Prerequisites
--------------
-- Docker & Docker Compose
-- Node.js 18+ and npm
-- Git
+Before you begin, ensure you have installed:
+- **Git** (https://git-scm.com)
+- **Node.js 18+** (https://nodejs.org)
+- **npm** 9+ (comes with Node)
+- **Docker & Docker Compose** (https://docs.docker.com/get-docker)
+- **Windows PowerShell 5.1+** (for PowerShell scripts) OR **bash** (for Unix scripts)
 
-Quickstart (Docker)
---------------------
-From the repo root:
+### Clone the Repository
 
 ```bash
-docker compose build
-docker compose up -d
+# Clone the main repository
+git clone https://github.com/Civicverse/Civicverse.git
+cd Civicverse
+
+# OR clone from nightly release branch
+git clone -b main https://github.com/Civicverse/Civicverse-nightly-v0.0.git Civicverse-nightly
+cd Civicverse-nightly
 ```
 
-Open the frontend at http://localhost:3000
+### Option 1: Full Stack with Docker (Recommended for Quick Start)
 
-Local development (frontend)
-----------------------------
+From the repository root:
+
 ```bash
+# Build all services (frontend, backend, database)
+docker compose build
+
+# Start all services in detached mode
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop everything
+docker compose down
+```
+
+Then open your browser to:
+- **Frontend**: http://localhost:3000
+- **Multiplayer Server**: ws://localhost:8080/ws
+- **API**: http://localhost:8080
+
+### Option 2: Local Development (Frontend Only)
+
+This is the fastest way to develop the UI/UX without running the server.
+
+```bash
+# Navigate to frontend directory
 cd frontend
-npm install
+
+# Install dependencies
+npm ci   # (uses package-lock.json; more reliable than npm install)
+
+# Start the Vite development server (hot-reload enabled)
+npm run dev
+
+# In another terminal, optionally start the backend server
+cd ../backend
+npm ci
 npm run dev
 ```
 
-Non-custodial onboarding — how it works
---------------------------------------
-- Identity: Ed25519 keypair generated in the browser and stored encrypted in localStorage.
-- Wallet: BIP-39 12-word mnemonic generated in the browser and encrypted with a password-derived AES-256-GCM key.
-- Password: PBKDF2-SHA256 (100k iterations) used for deriving encryption keys.
-- Persistence: Encrypted blobs remain in localStorage; login requires password to decrypt.
+Then open http://localhost:5173 in your browser (Vite default port).
 
-Debugging & validation
-----------------------
-- localStorage keys of interest: `civicverse:identity`, `civicverse:wallet`, `civicverse:multichain`, `civicverse_user`.
-- To debug, open DevTools → Console and look for logs prefixed with `[signup]`, `[auth]`, or `[wallet]`.
-
-Roadmap (short-term priorities)
-------------------------------
-1. Phase 3 — Recovery (Shamir's Secret Sharing + Social Recovery) — med
-2. Full BIP-32/HMAC-SHA512 implementation for interoperability — med
-3. Harden local storage (IndexedDB/SQLite + encryption) — small
-4. CI (unit + e2e tests) and GitHub Actions — med
-5. Monorepo consolidation & release scripts — large
-
-Contributing
-------------
-- Fork the repo, create a branch, add tests, open a PR with description and changelog.
-
-Cleaning & pushing a nightly
-----------------------------
-Before pushing a nightly build, remove local artifacts:
-
-```powershell
-Remove-Item -Recurse -Force .\frontend\node_modules
-Remove-Item -Recurse -Force .\backend\node_modules
-Remove-Item -Recurse -Force .\frontend\dist
-Remove-Item -Recurse -Force .\**\.cache
-```
-
-Commit and push to the remote (example):
+### Option 3: Frontend Build & Preview (Production Simulation)
 
 ```bash
-git add .
-git commit -m "chore: add Nightly README + roadmap"
-git remote add nightly https://github.com/Civicverse/Civicverse-nightly-v0.0.git
-git push nightly HEAD:main --force
+cd frontend
+
+# Install dependencies
+npm ci
+
+# Build for production
+npm run build
+
+# Preview the production build locally
+npm run preview
 ```
 
-Notes
------
-- The current wallet/address derivation is simplified for demo purposes — do not use generated keys on mainnet until replaced with a production BIP-32 implementation.
-- For production, move to secure storage and conduct a security audit.
+### Project Structure
+
+```
+Civicverse/
+├── frontend/                    # React 18 + Vite + Tailwind + Framer Motion
+│   ├── src/
+│   │   ├── lib/                # Crypto utilities, wallets, storage
+│   │   │   ├── civicIdentity.ts    # Ed25519 identity generation & storage
+│   │   │   ├── civicWallet.ts      # BIP-39/44 HD wallet multi-chain
+│   │   │   ├── bip32.ts            # BIP-32 derivation with secp256k1
+│   │   │   ├── bip39.ts            # BIP-39 mnemonic generation
+│   │   │   ├── passwordUtils.ts    # PBKDF2 + AES-256-GCM encryption
+│   │   │   ├── encryptedDb.ts      # sql.js encrypted SQLite wrapper
+│   │   │   ├── indexedDbStore.ts   # IndexedDB for large encrypted storage
+│   │   │   ├── socialRecovery.ts   # Phase 3: Shamir's Secret Sharing
+│   │   │   ├── statelessRelay.ts   # Phase 4: Transaction relay client
+│   │   │   └── governanceDAO.ts    # Phase 5: Decentralized governance
+│   │   ├── pages/
+│   │   │   ├── LoginPage.tsx       # Non-custodial login (cyan/pink neon)
+│   │   │   ├── SignupPage.tsx      # Account creation (lime/orange neon)
+│   │   │   ├── WalletDetailsPage.tsx  # Multi-chain address display
+│   │   │   └── ...
+│   │   ├── store/
+│   │   │   └── gameStore.ts        # Zustand global state (auth, wallet, user)
+│   │   └── App.tsx                 # Router & protected routes
+│   ├── __tests__/
+│   │   └── crypto.test.ts          # Jest unit tests for crypto modules
+│   ├── jest.config.js              # Jest test configuration
+│   ├── package.json                # Frontend dependencies & scripts
+│   ├── vite.config.ts              # Vite bundler config
+│   ├── tailwind.config.js          # Tropical neon color scheme
+│   └── tsconfig.json               # TypeScript config
+│
+├── backend/                    # Node.js Express + WebSocket multiplayer server
+│   ├── multiplayer-server.js   # Player state, combat, wallets, ToS endpoints
+│   ├── package.json            # Backend dependencies
+│   ├── tos_consents.json       # ToS acceptance persistence (auto-generated)
+│   └── Dockerfile              # Backend container image
+│
+├── .github/workflows/          # GitHub Actions CI/CD
+│   ├── ci.yml                  # Frontend & backend lint/build on PR/push
+│   ├── docker-build.yml        # Docker image build pipeline
+│   ├── publish-ghcr.yml        # Publish images to GitHub Container Registry
+│   ├── nightly-release.yml     # Scheduled nightly builds & releases
+│   ├── release-draft.yml       # Auto-create draft releases
+│   └── monorepo-ci.yml         # Matrix testing (root, frontend, backend)
+│
+├── docker-compose.yml          # Orchestrate frontend, backend, optional services
+├── Dockerfile                  # Frontend production build
+├── package.json                # Root monorepo config with npm workspaces
+├── tailwind.config.js          # Shared Tailwind theme (inherited by frontend)
+├── README.md                   # This file
+├── .gitignore                  # Git exclusions
+└── tsconfig.json               # Root TypeScript config
+```
+
+### Non-Custodial Onboarding Explained
+
+1. **Identity Creation** (`civicIdentity.ts`)
+   - Ed25519 keypair generated locally in the browser
+   - Public key becomes your Civic ID (DID)
+   - Private key encrypted with PBKDF2-SHA256(password, salt) → AES-256-GCM
+   - Encrypted blob stored in `localStorage['civicverse:identity']` as `ENCRYPTED:...`
+   - **Your private key never leaves your device**
+
+2. **Wallet Creation** (`civicWallet.ts`)
+   - BIP-39 12-word mnemonic generated (entropy + checksum)
+   - Mnemonic → PBKDF2-HMAC-SHA512 → 512-bit seed
+   - Seed → BIP-32 master key (secp256k1)
+   - BIP-44 derivation: `m/44'/coin'/account'/change/index`
+   - Generates addresses for: **Bitcoin, Ethereum, Kaspa, Monero**
+   - Mnemonic encrypted same as above, stored in `localStorage['civicverse:wallet']`
+   - **You hold the only copy of the seed phrase**
+
+3. **Password-Protected Decryption**
+   - Login requires the same password used at signup
+   - Password → PBKDF2 derivation → decrypts identity & wallet
+   - If password is wrong, decryption fails → "Invalid password" error
+   - **No server-side password storage or recovery**
+
+### Storage & Encryption Details
+
+| Data | Storage | Encryption | Key Source |
+|------|---------|-----------|------------|
+| Identity (Ed25519 keypair) | localStorage | AES-256-GCM | PBKDF2(password) |
+| Wallet (BIP-39 mnemonic) | localStorage | AES-256-GCM | PBKDF2(password) |
+| Multi-chain addresses | localStorage | None (public) | Derived from mnemonic |
+| User session | localStorage | None | UI state / auth flag |
+| Large encrypted storage (future) | IndexedDB | AES-256-GCM | PBKDF2(password) |
+| Local SQLite (future) | sql.js in-memory + IndexedDB | AES-256-GCM | PBKDF2(password) |
+
+### Testing the System
+
+#### Run Unit Tests
+
+```bash
+cd frontend
+
+# Run all tests once
+npm test
+
+# Watch mode (re-run on file change)
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+Tests cover:
+- BIP-39 mnemonic generation & validation
+- BIP-32 master key & derivation
+- Multi-chain address consistency
+- CivicIdentity create/restore/sign
+- CivicWallet multi-chain generation
+- Password hashing & verification
+
+#### Debug in Browser
+
+Open DevTools (F12) and check:
+- **Application → Storage → LocalStorage → http://localhost:5173**
+  - Look for: `civicverse:identity`, `civicverse:wallet`, `civicverse:multichain`, `civicverse_user`
+- **Console**
+  - Search for logs: `[signup]`, `[auth]`, `[wallet]`, `[login]`
+  - These are marked with colored prefixes for easy debugging
+
+#### Manual API Testing
+
+```bash
+# Get multiplayer players
+curl http://localhost:8080/api/players
+
+# Accept ToS (example)
+curl -X POST http://localhost:8080/api/tos/accept \
+  -H 'Content-Type: application/json' \
+  -d '{"playerId":1,"version":"1.0.0"}'
+
+# Check ToS acceptance
+curl http://localhost:8080/api/tos/1
+
+# Get health status
+curl http://localhost:8080/health
+```
+
+---
+
+### 🎨 UI & Design System
+
+**Tropical Neon Theme:**
+- Primary: Cyan (#00f5ff), Hot Pink (#ff006e), Neon Lime (#39ff14)
+- Accent: Orange (#ff6600), Purple (#b537f2), Teal (#00d9d9)
+- Dark surface: #0a0e27 → #1a1f3a (tropical ocean night)
+
+**Animations:**
+- `pulse-neon` — glowing fade in/out
+- `neon-flicker` — realistic light flicker
+- `slide-in-up` — element slides up on load
+- `fade-in` — smooth opacity transition
+- `float` — subtle vertical bounce
+- `glow` — box-shadow pulse
+
+**All pages** use glassmorphism (backdrop blur), gradient text, and smooth Framer Motion transitions.
+
+---
+
+## 📋 Immediate TODOs for Contributors
+
+### 🔴 CRITICAL (Blocking Production)
+
+- [ ] **Replace simplified Shamir Secret Sharing stub** (`socialRecovery.ts`)
+  - Integrate `secrets.js` library for real M-of-N threshold cryptography
+  - Implement guardian share encryption & distribution workflow
+  - Add recovery UI page to retrieve shares from guardians
+
+- [ ] **Implement Stateless Relay Backend** (`backend/multiplayer-server.js`)
+  - Add `/api/relay/broadcast` endpoint to broadcast signed transactions
+  - Add fee estimation endpoints per blockchain (BTC, ETH, KASPA, MONERO)
+  - Add transaction validation before relay
+  - Add nonce management for Ethereum
+  - Test with testnet transactions
+
+- [ ] **Add BIP-32 Production Tests**
+  - Test against known BIP-32 test vectors (from TREZOR or similar)
+  - Validate secp256k1 public key derivation matches standards
+  - Test hardened vs. non-hardened derivation
+  - Verify Monero special-case address derivation (CryptoNote format)
+
+- [ ] **Security Audit**
+  - Review encryption key derivation (PBKDF2 iterations: 100,000 vs. recommended 600,000?)
+  - Review AES-256-GCM nonce generation (ensure random per encryption)
+  - Test password strength validation (enforce min entropy)
+  - Test side-channel resistance for password comparison
+  - Review localStorage vs. IndexedDB security implications
+
+### 🟡 HIGH (Near-term, Within 2 Weeks)
+
+- [ ] **Replace simplified BIP-32 with production library** (e.g., `bip32`, `ethereumjs-util`)
+  - Current implementation works but is not interoperable
+  - Production wallets must match standard derivation paths
+  - Test Ethereum address derivation (Keccak-256 hash of secp256k1 public key)
+  - Test Bitcoin bech32 address encoding
+  - Add Kaspa & Monero address format validation
+
+- [ ] **Expand Unit Test Coverage to 80%+**
+  - Add integration tests for signup → wallet creation → address display
+  - Add end-to-end tests for login → password decrypt → address retrieval
+  - Mock blockchain APIs for relay testing
+  - Test error scenarios (wrong password, corrupted data, etc.)
+
+- [ ] **Add Seed Phrase Display & Export to UI**
+  - Add backup button on WalletDetailsPage
+  - Show 12-word seed phrase with warning modal
+  - Add "copy" functionality with clipboard confirmation
+  - Add option to export encrypted backup file
+  - Test seed phrase validation on import
+
+- [ ] **Implement Governance Voting UI Pages**
+  - Create `GovernancePage.tsx` to display active proposals
+  - Add proposal creation form
+  - Add voting interface (yes/no, multiple choice)
+  - Display vote tally & participation %
+  - Link governance token balance to vote weight
+
+- [ ] **Add Backend Endpoints for Governance**
+  - `/api/proposals` (GET all, POST create)
+  - `/api/proposals/:id/vote` (POST vote)
+  - `/api/proposals/:id/finalize` (POST finalize voting)
+  - Persist proposals and votes to PostgreSQL (or file-based JSON)
+  - Add signature verification for votes
+
+- [ ] **Upgrade localStorage to IndexedDB for Large Data**
+  - Migrate wallet backups to IndexedDB (larger capacity)
+  - Keep encryption the same (AES-256-GCM)
+  - Implement fallback to localStorage for small data
+  - Add data migration script for existing users
+
+### 🟢 MEDIUM (Next Sprint, 2-4 Weeks)
+
+- [ ] **Implement Monorepo Release & Build Scripts**
+  - Add `npm run release` script to bump version + tag + build
+  - Add `npm run build:all` to build frontend & backend
+  - Add `npm run publish:docker` for Docker image push
+  - Document release process in `CONTRIBUTING.md`
+
+- [ ] **Add E2E Tests with Playwright**
+  - Test full signup flow (username, password, confirm)
+  - Test login with correct/incorrect password
+  - Test wallet address display & copy
+  - Test navigation between pages
+  - Run against both dev and production builds
+
+- [ ] **Create `CONTRIBUTING.md` Guide**
+  - Fork & branch workflow
+  - PR checklist (tests, no console.errors, changelog)
+  - Code style guide (Prettier, ESLint)
+  - Testing requirements (70%+ coverage)
+  - Commit message format
+  - Review process
+
+- [ ] **Add GitHub Discussions & Issue Templates**
+  - Bug report template (reproduction steps, logs)
+  - Feature request template (use case, acceptance criteria)
+  - Security vulnerability template (responsible disclosure)
+
+- [ ] **Implement Social Guardian UI** (Phase 3)
+  - Add page to manage trusted guardians
+  - Interface to distribute Shamir shares to guardians
+  - Recovery flow when user loses device access
+  - Notification system for guardians
+
+- [ ] **Add Ledger/Trezor Hardware Wallet Support**
+  - Integrate `@ledgerhq/hw-app-btc` and `-eth` libraries
+  - Add UI to connect hardware wallet
+  - Display HD path selection for derivation
+  - Sign transactions with hardware wallet
+  - Test with testnet devices
+
+### 🔵 LOW (Polish & Documentation, 4+ Weeks)
+
+- [ ] **Improve Error Messages & User Feedback**
+  - Add toast notifications for all errors
+  - Clearer password requirement explanations
+  - Help tooltips for crypto terms (mnemonic, private key, etc.)
+  - "Copy to clipboard" feedback animations
+
+- [ ] **Add Dark/Light Mode Toggle**
+  - Store preference in localStorage
+  - Respect system `prefers-color-scheme`
+  - Test neon colors in both modes
+
+- [ ] **Create Video Tutorials**
+  - Signup flow (1 min)
+  - Viewing wallet addresses (1 min)
+  - Securing your seed phrase (2 min)
+  - Understanding non-custodial wallets (3 min)
+
+- [ ] **Add Multi-Language Support (i18n)**
+  - Extract strings to `locales/` directory
+  - Add language selector in UI
+  - Support: English, Spanish, Mandarin, French
+
+- [ ] **Implement Blockchain Integration Tests**
+  - Connect to Bitcoin/Ethereum testnet
+  - Send small test transactions via stateless relay
+  - Verify transactions on-chain
+  - Test fee estimation accuracy
+
+- [ ] **Production Deployment**
+  - SSL/TLS certificate setup
+  - Environment variable config (no secrets in code)
+  - Database back ups (PostgreSQL for proposals, votes)
+  - Log aggregation (CloudWatch, ELK stack)
+  - Monitoring & alerting (Prometheus, Grafana)
+  - CDN for frontend assets (CloudFront, Cloudflare)
+
+---
+
+## 🧠 How to Contribute
+
+1. **Pick a TODO** from the list above (start with 🟡 HIGH priority)
+2. **Create a branch** from `main`:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. **Make your changes** and commit with clear messages:
+   ```bash
+   git commit -m "feat(module): brief description of change"
+   ```
+4. **Run tests locally**:
+   ```bash
+   npm test      # frontend
+   npm run lint  # check for errors
+   npm run build # verify build succeeds
+   ```
+5. **Push to your fork** and **open a Pull Request** with:
+   - Description of what you changed
+   - Link to relevant TODO(s)
+   - Screenshots (if UI change)
+   - Tests added/updated
+6. **Wait for review** and address feedback
+
+### Commit Message Format
+
+```
+type(scope): subject
+
+- type: feat, fix, test, docs, style, refactor, chore
+- scope: the module/component affected (e.g., crypto, wallet, ui)
+- subject: imperative, present tense, no period
+
+Example:
+feat(bip32): add secp256k1 key derivation validation
+fix(login): resolve password decrypt timeout on slow devices
+test(wallet): add unit tests for multi-chain address consistency
+```
+
+---
+
+## Debugging & Troubleshooting
+
+### Port Already in Use
+
+```bash
+# Kill process on port 3000 (frontend) or 8080 (backend)
+# Windows PowerShell
+Get-Process | Where-Object { $_.Port -eq 3000 } | Stop-Process -Force
+
+# Linux/Mac
+lsof -i :3000 | grep LISTEN | awk '{print $2}' | xargs kill -9
+```
+
+### Docker Compose Issues
+
+```bash
+# View logs
+docker compose logs -f frontend
+docker compose logs -f backend
+
+# Rebuild without cache
+docker compose build --no-cache
+
+# Clean up everything (warning: removes data)
+docker compose down -v
+```
+
+### npm Install Problems
+
+```bash
+# Clear npm cache
+npm cache clean --force
+
+# Remove lockfile and node_modules, reinstall
+rm -rf node_modules package-lock.json
+npm ci
+
+# For Windows
+Remove-Item -Recurse -Force node_modules
+Remove-Item package-lock.json
+npm ci
+```
+
+### TypeScript Errors
+
+```bash
+# type-check without building
+npx tsc --noEmit
+
+# check specific file
+npx tsc src/lib/bip32.ts --noEmit
+```
+
+---
+
+## Roadmap (Long-term Vision)
+
+### Phase 6: Hardware Wallet Integration (Q2 2026)
+- Ledger & Trezor support
+- Sign transactions on hardware devices
+- Multi-signature multi-device wallets
+
+### Phase 7: Decentralized Identity Standards (Q3 2026)
+- DID Document (W3C standard) support
+- Verifiable Credentials for voting, employment, education
+- Interoperability with other DID systems (did:web, did:key)
+
+### Phase 8: Governance at Scale (Q4 2026)
+- Delegate voting (vote through trusted representatives)
+- Quadratic voting (prevent whale dominance)
+- Conviction voting (locked tokens = stronger vote)
+- DAO treasury management
+
+### Phase 9: Relay Network Decentralization (2027)
+- Run your own relay node
+- Gossip protocol for transaction distribution
+- Light client mode (no full blockchain sync)
+
+### Phase 10: Cross-Chain Atomic Swaps (2027)
+- Trade directly across Bitcoin, Ethereum, Kaspa, Monero
+- No intermediary required
+- Low fees, high speed
+
+---
+
+## Resources
+
+- **Non-Custodial Wallets**: https://coinsutra.com/non-custodial-wallet/
+- **BIP-32 Standard**: https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
+- **BIP-39 Mnemonic**: https://github.com/bitcoin/bips/blob/master/bip-0039.md
+- **BIP-44 Derivation Paths**: https://github.com/bitcoin/bips/blob/master/bip-0044.md
+- **Ed25519 Signing**: https://ed25519.cr.yp.to/
+- **AES-256-GCM Encryption**: https://csrc.nist.gov/publications/detail/sp/800-38d/final
+- **PBKDF2 Key Derivation**: https://tools.ietf.org/html/rfc2898
+- **Shamir Secret Sharing**: https://en.wikipedia.org/wiki/Shamir%27s_Secret_Sharing
+- **DID Specification**: https://w3c-ccg.github.io/did-core/
+
+---
+
+## License
+
+CivicVerse is released under the [LICENSE](LICENSE.txt). Use according to terms.
+
+---
+
+**Questions?** Open an issue or start a GitHub Discussion.
+**Want to help?** Pick a TODO from the list above and submit a PR.
+
+🌴 **CivicVerse Nightly v0.0 — Ready for Deployment.** 🌴
 
 
 A purposeful economic engine (UBI via verified participation)
